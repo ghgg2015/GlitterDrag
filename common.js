@@ -191,9 +191,17 @@ const typeUtil = {
 }
 Object.freeze(typeUtil);
 
-const $E = (s = "") => {
-    let r = document.querySelector(s);
+const $E = (s = "", context = document) => {
+    let r = context.querySelector(s);
     if (!r) {
+        console.trace("No Result: document.querySelector", s)
+    }
+    return r;
+}
+
+const $A = (s = "", context = document) => {
+    let r = context.querySelectorAll(s);
+    if (!r.length) {
         console.trace("No Result: document.querySelector", s)
     }
     return r;

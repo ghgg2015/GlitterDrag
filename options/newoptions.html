@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title></title>
+    <link rel="shortcut icon" type="image/png" href="./../Drag.png">
+    <link rel="stylesheet" type="text/css" href="extension.css">
+    <link rel="stylesheet" type="text/css" href="newoptions.css">
+    <link rel="stylesheet" type="text/css" href="./../content_scripts/content_script.css">
+
+</head>
+
+<body>
+
+    <div id="control">
+        <button class="default" data-i18n="Backup" id="backup" href="#" target="window" download="GlitterDrag-time.json">备份配置</button>
+        <button class="default" data-i18n="Restore" id="restore" href="#">恢复配置 </button>
+        <button class="default" data-i18n="Default" id="default" href="#">恢复默认 </button>
+        <input type="file" id="fileInput" accept=".json" style="display:none">
+    </div>
+    <br>
+
+    <div id="container">
+        <section id="tabs">
+            <nav>
+                <a id="_debug" toggle-target="#tab-debug" data-i18n="Debug" style="color:crimson;display:none" class="nav-a" href="#">调试</a>
+                <a class="nav-a" toggle-target="#tab-general" data-i18n="General" href="#">常规</a>
+                <a class="nav-a nav-active" toggle-target="#tab-actions" data-i18n="Actions" href="#">动作</a>
+                <a class="nav-a" toggle-target="#tab-actions-ctrlkey" data-i18n="ActionsCtrlKey" href="#">动作ctrl</a>
+                <a class="nav-a" toggle-target="#tab-actions-shiftkey" data-i18n="ActionsShiftKey" href="#">动作shift</a>
+                <a class="nav-a" toggle-target="#tab-search-template" data-i18n="SearchTemplate" href="#">搜索模板</a>
+                <a class="nav-a" toggle-target="#tab-download" data-i18n="Download" href="#">下载</a>
+                <a class="nav-a" toggle-target="#tab-style" data-i18n="Style" href="#">样式</a>
+            </nav>
+            <ul style="list-style:none">
+                <li class="tab-content" id="tab-debug" style="margin-left:12em">
+                    <button id="reload">Reload</button>
+                    <br>
+                    <div>
+                        <br>
+                        <a href="https://baidu.com/" data-i18n="Baidu">百度</a>
+                        <a href="https://bing.com/" data-i18n="Bing">Bing</a>
+                        <a href="https://www.mozilla.org/firefox/new/">Firefox</a>
+                        <br>
+                        <p>The quick brown fox jumps over the lazy dog</p>
+                        <br>
+
+                        <div id="drop" style="width:64px;height:64px;background-color:bisque;">
+                        </div>
+                        <a href="blank.html">
+                            <image src="../Drag.png" style="width: 128px;height:128px"></image>
+                        </a>
+                        <br>
+                        <br>
+                        <image id="example" src="../Drag.png" style="width: 64px;height:64px;background-color:aliceblue"></image>
+                        <br>
+                        <textarea id="logArea" rows="10" cols="80"></textarea>
+                        <br>
+                    </div>
+                </li>
+                <li class="tab-content tab-active" id="tab-actions">
+                    <div id="actions">
+                        <div id="type-category" class="category">
+                            <div class="category-item-selected" value="textAction">文本</div>
+                            <div value="linkAction">链接</div>
+                            <div value="imageAction">图像</div>
+                        </div>
+                        <div id="direction-category" class="category">
+                            <div value="DIR_U" class="category-item-selected">上</div>
+                            <div value="DIR_D">下</div>
+                            <div value="DIR_L">左</div>
+                            <div value="DIR_R">右</div>
+                            <div value="DIR_UP_L">左上</div>
+                            <div value="DIR_UP_R">右上</div>
+                            <div value="DIR_LOW_L">左下</div>
+                            <div value="DIR_LOW_R">右下</div>
+                            <div value="DIR_OUTER">从外部</div>
+                        </div>
+                        <div id="action-category">
+                            <table>
+                                <tbody>
+                                    <tr>
+                                        <td>限制方向</td>
+                                        <td>
+                                            <select id="direction-control" title="限制允许拖拽的方向">
+                                                <option value="ALLOW_NORMAL"></option>
+                                                <option value="ALLOW_QUADRANT"></option>
+                                                <option value="ALLOW_H"></option>
+                                                <option value="ALLOW_V"></option>
+                                                <option value="ALLOW_LOW_L_UP_R"></option>
+                                                <option value="ALLOW_UP_L_LOW_R"></option>
+                                                <option value="ALLOW_ALL"></option>
+                                                <option value="ALLOW_ONE"></option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>执行的动作</td>
+                                        <td>
+                                            <select id="action-name" title="要执行的动作">
+                                                <option value="ACT_NONE">无动作</option>
+                                                <option value="ACT_OPEN">打开</option>
+                                                <option value="ACT_COPY">复制</option>
+                                                <option value="ACT_SEARCH">搜索</option>
+                                                <option value="ACT_TRANS" >翻译</option>
+                                                <option value="ACT_DL">下载</option>
+                                                <option value="ACT_QRCODE" >二维码</option>
+                                                <option value="ACT_FIND" >查找</option>
+                                            </select>
+
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>标签页状态</td>
+                                        <td>
+                                            <input id="foreground" value="FORE_GROUND" type="radio" name="tab-active"><label for="foreground">前台</label>
+                                            <input id="background" value="BACK_GROUND" type="radio" name="tab-active"><label for="background">后台</label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>标签页位置</td>
+                                        <td>
+                                            <select title="标签页的位置" style="" id="tab-pos">
+                                                <option value="TAB_NEW_WINDOW">新建窗口</option>
+                                                <option value="TAB_NEW_PRIVATE_WINDOW">隐私窗口</option>
+                                                <option value="TAB_CUR">当前</option>
+                                                <option value="TAB_FIRST">首</option><option value="TAB_LAST">尾</option>
+                                                <option value="TAB_CLEFT">前</option><option value="TAB_CRIGHT">后</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>引擎选择</td>
+                                        <td id="search-engine-select">
+
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>引擎名称</td>
+                                        <td><input id="search-engine-name" type="text" url="" disabled></td>
+                                    </tr>
+                                    <tr>
+                                        <td>打开类型</td>
+                                        <td>
+                                            <input id="open-text" value="OPEN_TEXT" type="radio" name="open-type"><label for="open-text">文本</label>
+                                            <input id="open-link" value="OPEN_LINK" type="radio" name="open-type"><label for="open-link">链接</label>
+                                            <input id="open-image-link" value="OPEN_IMAGE_LINK" type="radio" name="open-type"><label for="open-image-link">优先图像链接</label>
+                                            <input id="open-image" value="OPEN_IMAGE" type="radio" name="open-type"><label for="open-image">图像</label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>搜索类型</td>
+                                        <td>
+                                            <input id="search-text" value="SEARCH_TEXT" type="radio" name="search-type"><label for="search-text">文本</label>
+                                            <input id="search-link" value="SEARCH_LINk" type="radio" name="search-type"><label for="search-link">链接</label>
+                                            <input id="search-image-link" value="SEARCH_IMAGE_LINK" type="radio" name="search-type"><label for="search-image-link">优先图像链接</label>
+                                            <input id="search-image" value="SEARCH_IMAGE" type="radio" name="search-type"><label for="search-image">图像</label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>复制类型</td>
+                                        <td>
+                                            <input id="copy-text" value="COPY_TEXT" type="radio" name="copy-type"><label for="copy-text">文本</label>
+                                            <input id="copy-link" value="COPY_LINK" type="radio" name="copy-type"><label for="copy-link">链接</label>
+                                            <input id="copy-image-link" value="COPY_IMAGE_LINK" type="radio" name="copy-type"><label for="copy-image-link">优先图像链接</label>
+                                            <input id="copy-image" value="COPY_IMAGE" type="radio" name="copy-type"><label for="copy-image">图像</label>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>下载类型</td>
+                                        <td>
+                                            <input id="download-text" value="DOWNLOAD_TEXT" type="radio" name="download-type"><label for="download-text">文本</label>
+                                            <input id="download-link" value="DOWNLOAD_LINK" type="radio" name="download-type"><label for="download-link">链接</label>
+                                            <input id="download-image-link" value="DOWNLOAD_IMAGE_LINK" type="radio" name="download-type"><label for="download-image-link">优先图像链接</label>
+                                            <input id="download-image" value="DOWNLOAD_IMAGE" type="radio" name="download-type"><label for="download-image">图像</label>
+                                        </td>
+                                        </td>
+                                    </tr>
+                                    <td>下载另存为...</td>
+                                    <td>
+                                        <input id="download-saveas-yes" value="DOWNLOAD_SAVEAS_YES" type="radio" name="download-saveas"><label for="download-saveas-yes">是</label>
+                                        <input id="download-saveas-no" value="DOWNLOAD_SAVEAS_NO" type="radio" name="download-saveas"><label for="download-saveas-no">否</label>
+                                    </td>
+                                    <tr>
+                                        <td>是否在站内搜索</td>
+                                        <td>
+                                            <input id="search-onsite-yes" value="SEARCH_ONSITE_YES" type="radio" name="search-onsite"><label for="search-onsite-yes">是</label>
+                                            <input id="search-onsite-no" value="SEARCH_ONSITE_NO" type="radio" name="search-onsite"><label for="search-onsite-no">否</label>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                        </div>
+                    </div>
+                </li>
+                <li class="tab-content" id="tab-actions-ctrlkey"></li>
+                <li class="tab-content" id="tab-actions-shiftkey"></li>
+                <li class="tab-content" id="tab-search-template">
+                    <p data-i18n="PlaceholderTip">用 %s 替代链接里的关键词，输入栏不能为空，名称不应该重复</p>
+                    <div id="builtin-engine">
+                        <span data-i18n="BuiltinEngineHelperText">这里是扩展为你预先提供的搜索引擎，选中后会自动添加在下方，不过还需要你自己点保存按钮：</span>
+                        <select style="display:inline-block">
+                            <option selected="selected" disabled="disabled" data-i18n="SearchTemplateClasses_General">General</option>
+                            <option value="https://www.google.com/search?q=%s">Google Search</option>
+                            <option value="https://www.bing.com/search?q=%s">Bing Search</option>
+                            <option value="https://duckduckgo.com/?q=%s&ia=web">DuckDuckGo Search</option>
+                            <option value="https://search.yahoo.com/search;?p=%s">Yahoo Search</option>
+                            <option value="https://www.yandex.com/search/?text=%s">Yandex Search</option>
+                            <option value="https://www.youtube.com/results?search_query=%s">Youtube Search</option>
+                            <option value="https://en.wikipedia.org/wiki/%s">Wikipedia (English)</option>
+                            <option value="https://www.amazon.com/s/?field-keywords=%s">Amazon Search</option>
+                            <option value="https://www.qwant.com/?q=%s&t=all">Qwant Search</option>
+                        </select>
+                        <select style="display:inline-block">
+                            <option selected="selected" disabled="disabled" data-i18n="SearchTemplateClasses_Chinese">Chinese</option>
+                            <option value="https://www.baidu.com/baidu?wd=%s">百度搜索</option>
+                            <option value="https://www.so.com/s?q=%s">360搜索</option>
+                            <option value="http://www.acfun.cn/search/#query=%s">Acfun搜索</option>
+                            <option value="https://search.bilibili.com/all?keyword=%s">哔哩哔哩搜索</option>
+                            <option value="http://www.soku.com/search_video/q_%s">优酷搜索</option>
+                            <option value="https://music.163.com/#/search/m/?s=%s">网易云音乐搜索</option>
+                            <option value="https://www.douban.com/search?q=">豆瓣搜索</option>
+                            <option value="https://www.zhihu.com/search?q=%s">知乎搜索</option>
+                            <option value="https://zh.wikipedia.org/wiki/%s">中文维基百科</option>
+                        </select>
+                        <select style="display:inline-block">
+                            <option selected="selected" disabled="disabled" data-i18n="SearchTemplateClasses_Image">Image</option>
+                            <option value="https://www.google.com/searchbyimage?image_url=%s">Google Image</option>
+                            <option value="https://tineye.com/search/?url=%s">Tineye</option>
+                            <option value="https://www.yandex.com/images/search?url=%s&rpt=imageview">Yandex Image</option>
+                            <option value="http://image.baidu.com/n/pc_search?queryImageUrl=%s">百度图片</option>
+                        </select>
+                        <select style="display:inline-block">
+                            <option selected="selected" disabled="disabled" data-i18n="SearchTemplateClasses_ImageSearch">Image Search(via upload)</option>
+                            <option value="{redirect.html}?cmd=search&url={url}&engineName=google">Google Image(upload) </option>
+                            <option value="{redirect.html}?cmd=search&url={url}&engineName=tineye">Tineye(upload)</option> 
+                            <option value="{redirect.html}?cmd=search&url={url}&engineName=yandex">Yandex(upload)</option> 
+                            <option value="{redirect.html}?cmd=search&url={url}&engineName=baidu">百度图片(上传)</option> 
+                        </select>
+                    </div>
+                    <div id="browser-engine" style="display:none">
+                        <span data-i18n="">这些是浏览器自身的搜索引擎：</span>
+                        <select style="display:inline-block">
+                             <option value="">000</option>
+                        </select>
+                    </div>
+                    <br>
+                    <div id="engine-buttons">
+                        <button id="RefreshbtnOnEngines" data-i18n="RefreshbtnOnEngines">刷新</button>
+                        <button id="AddbtnOnEngines" data-i18n="AddbtnOnEngines">添加</button>
+                        <button id="SavebtnOnEngines" data-i18n="SavebtnOnEngines">保存</button>
+                    </div>
+                    <br>
+                    <div id="engine-items"></div>
+                </li>
+                <li class="tab-content" id="tab-general">
+                    <label for="triggeredDistance" data-i18n="DistancePx">触发距离（px）</label>
+                    <input type="number" id="triggeredDistance" min=0 required>
+                    <br>
+                    <input type="checkbox" id="enablePrompt">
+                    <label for="enablePrompt" data-i18n="ShowActionTip">显示动作提示</label>
+                    <br>
+                    <label data-i18n="ModifyTipsContent">修改提示的内容:- </label>
+                    <select id="tipsContentSelect">
+                    </select>
+                    <input id="tipsContentInput" type="text" not-config></input><a data-i18n="TipsContentUsage" style="font:caption" href="https://github.com/harytfw/GlitterDrag/wiki/Usage-for-Content-of-Tips">使用方法</a>
+                    <!-- <span>可以使用的占位符: %a - 动作名称; %s - 选中的东西; %g - 标签页激活状态; %t - 标签页位置; %e - 引擎名称;  %d - 下载目录名称; %y - 执行的动作类型;</span> -->
+                    <br>
+                    <input type="checkbox" id="enableIndicator">
+                    <label for="enableIndicator" data-i18n="EnableDistanceTip">启用距离指示</label>
+                    <br>
+                    <input type="checkbox" id="enableAutoSelectPreviousTab">
+                    <label for="enableAutoSelectPreviousTab" data-i18n="EnableAutoSelectPreviousTab">自动选中上一个标签页</label>
+                    <br>
+                    <input type="checkbox" id="switchToParentTab">
+                    <label for="switchToParentTab" data-i18n="SwitchToParentTab">切换到父标签</label>
+                    <br>
+                    <input type="checkbox" id="disableAdjustTabSequence">
+                    <label for="disableAdjustTabSequence" data-i18n="DisableAdjustTabSequence">不调整标签页的打开顺序</label>
+                    <br>
+                    <input type="checkbox" id="enableCtrlKey">
+                    <label for="enableCtrlKey" data-i18n="EnableCtrlKey">当按下Ctrl键时，使用不同的动作</label>
+                    <br>
+                    <input type="checkbox" id="enableShiftKey">
+                    <label for="enableShiftKey" data-i18n="EnableShiftKey">当按下Shift键时，使用不同的动作</label>
+                    <br>
+                    <input type="checkbox" id="enableTimeoutCancel">
+                    <label for="enableTimeoutCancel" data-i18n="EnableTimeoutCancel">启用超时取消></label>
+                    <br>
+                    <label for="timeoutCancel" data-i18n="TimeoutCancel">超时取消时间（ms）</label>
+                    <input type="number" id="timeoutCancel">
+                    <br>
+                    <input disabled type="checkbox" id="enableSync">
+                    <label for="enableSync" data-i18n="EnableSync">同步到Firefox账户(v53+)</label>
+                </li>
+                <li class="tab-content" id="tab-download">
+                    <button data-i18n="ShowDefaultDownloadDirectory" id="showDefaultDownloadDirectory">打开浏览器的默认下载目录</button>
+                    <h4 data-i18n="SettingDownloadDirectory">设置下载目录</h4>
+                    <p data-i18n="SettingDownloadDirectoryHelperText"></p>
+                    <button id="SavebtnOnDownloadDirectories" data-i18n="SavebtnOnDownloadDirectories">保存</button>
+                    <!--8个  -->
+                    <template id="template-for-directory-entry">
+                        <div class="directory-entry" entry-index="0">
+                            <input type="text" disabled></input>
+                            <input type="text"></input>
+                            <!-- <a href="#" >&#10003</a> -->
+                        </div>
+                    </template>
+                </li>
+                <li class="tab-content" id="tab-style">
+
+                    <input type="checkbox" id="enableStyle">
+                    <label for="enableStyle" data-i18n="EnableStyle">允许使用自定义样式></label>
+                    <br>
+                    <button id="saveStyle" data-i18n="SaveStyle"></button>
+                    <textarea id="styleContent"></textarea>
+
+                </li>
+            </ul>
+
+        </section>
+    </div>
+    <script src="./../common.js"></script>
+    <script src="./../default_config.js"></script>
+    <script src="./../config.js"></script>
+    <script src="newoptions.js"></script>
+    <script src="./../content_scripts/content_script.js"></script>
+    <script src="options_debug.js"></script>
+</body>
+
+</html>
