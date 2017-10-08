@@ -88,19 +88,7 @@ for (let item of Object.keys(commons)) {
     }
 }
 
-async function toggleSelectedClass(e) {
-    let el = e.target.parentElement.querySelector(".category-item-selected");
-    let nextSelected = e.target;
-    while (nextSelected.classList.contains("category-item-disabled")) nextSelected = nextSelected.nextElementSibling;
-    el.classList.remove("category-item-selected");
-    nextSelected.classList.add("category-item-selected");
 
-    if (e.target.parentElement.id === "type-category") {
-        const el = $E("#direction-control");
-        el.value = (await (browser.storage.local.get("directionControl")))["directionControl"][currectActionType()];
-        el.dispatchEvent(new Event("change"));
-    }
-}
 
 function currentAction() {
     return "Actions";
@@ -114,64 +102,65 @@ function currentDirection() {
     return $E("#direction-category .category-item-selected").getAttribute("value");
 }
 
-async function assignValue() {
-    let actConfig = (await (browser.storage.local.get(currentAction())))[currentAction()][currentActionType()][currentDirection()];
-    if (actConfig["tab_active"] === commons.FORE_GROUND) {
-        $E("#foreground").checked = true;
-    }
-    else {
-        $E("#background").checked = true;
+
+
+
+class ActionWrapper {
+    constructor(actionsKeyName = "Actions") {
+        this.storage = null;
+        this.actionsKeyName = actionsKeyName;
+        // $A("#type-category>div").forEach(el => {
+        //     el.addEventListener("click", () => {
+        //         $E("#direction-control").selectedIndex = 1;
+        //         $E("#direction-control").dispatchEvent(new Event("change"));
+        //     })
+        // })
+        $A("#type-category>div,#direction-category>div").forEach(el => {
+            el.addEventListener("click", (e) => {
+                this.toggleSelectedClass(e);
+                this.load(e);
+            });
+        });
+
+        $A("option", $E("#direction-control")).forEach(opt => {
+            for (let obj of OPTION_TEXT_VALUE_TABLE.allow) {
+                if (obj.value === opt.value) {
+                    opt.textContent = obj.text;
+                    break;
+                }
+            }
+        });
+        $E("#direction-control").addEventListener("change", (e) => this.onControlChange(e));
+
+        $A("#builtin-engine select").forEach((selectElem) => {
+            let cloned = selectElem.cloneNode(true);
+            cloned.addEventListener("change", (e) => {
+                $E("#search-engine-name").value = e.target.querySelector(`[value='${e.target.value}']`).textContent;
+                // $E("#search-engine-name").setAttribute("url", e.target.value);
+                e.target.firstElementChild.selected = true;
+            })
+            $E("#search-engine-select").appendChild(cloned);
+        });
+        $E("#action-category").addEventListener("change", e => this.save(e));
+        $E("#type-category>div").click();
     }
 
-    if (actConfig["search_onsite"] === commons.SEARCH_ONSITE_YES) {
-        $E("#search-onsite-yes").checked = true;
+
+    async toggleSelectedClass(e) {
+        let el = e.target.parentElement.querySelector(".category-item-selected");
+        let nextSelected = e.target;
+        while (nextSelected.classList.contains("category-item-disabled")) nextSelected = nextSelected.nextElementSibling;
+        el.classList.remove("category-item-selected");
+        nextSelected.classList.add("category-item-selected");
     }
-    else {
-        $E("#search-onsite-no").checked = true;
+    get actionType() {
+        return $E("#type-category .category-item-selected").getAttribute("value");
     }
-    if (actConfig["download_saveas"] === commons.DOWNLOAD_SAVEAS_YES) {
-        $E("#download-saveas-yes").checked = true;
-    }
-    else {
-        $E("#download-saveas-no").checked = true;
+    get direction() {
+        return $E("#direction-category .category-item-selected").getAttribute("value");
     }
 
-    if (currentAction() === "Actions_CtrlKey") {
-        $E("#direction-control").value = (await (browser.storage.local.get("directionControl_CtrlKey")))["directionControl_CtrlKey"][currentActionType()]
-    }
-    else if (currentAction() === "Actions_ShiftKey") {
-        $E("#direction-control").value = (await (browser.storage.local.get("directionControl_ShiftKey")))["directionControl_ShiftKey"][currentActionType()]
-    }
-    else {
-        $E("#direction-control").value = (await (browser.storage.local.get("directionControl")))["directionControl"][currentActionType()]
-    }
-    $E("#action-name").value = actConfig["act_name"];
-    $E("#tab-pos").value = actConfig["tab_pos"];
-    $E("#search-engine-name").value = actConfig["engine_name"];
-    $E(`[value='${actConfig["search_type"]}']`).checked = true;
-    $E(`[value='${actConfig["download_type"]}']`).checked = true;
-    $E(`[value='${actConfig["copy_type"]}']`).checked = true;
-    $E(`[value='${actConfig["open_type"]}']`).checked = true;
-
-}
-
-function getRadioValue(name) {
-    document.getElementsByName(name).forEach((el) => {
-        if (el.checked) return el.value;
-    })
-}
-
-async function main() {
-
-    $A("#type-category>div,#direction-category>div").forEach(el => {
-        el.addEventListener("click", toggleSelectedClass);
-    })
-
-    $A("#direction-category>div").forEach(el => {
-        el.addEventListener("click", assignValue);
-    })
-    let el = $E("#direction-control");
-    el.addEventListener("change", (e) => {
+    async onControlChange(e) {
         function showDirections(re) {
             $A("#direction-category>div").forEach(el => {
                 el.classList.add("category-item-disabled");
@@ -179,7 +168,6 @@ async function main() {
                     el.classList.remove("category-item-disabled");
                 }
             })
-            $E("#direction-category>div").click();
         }
         switch (e.target.value) {
             case commons.ALLOW_ALL:
@@ -210,47 +198,88 @@ async function main() {
             default:
                 break;
         }
-    })
-    $A("option", el).forEach(opt => {
-        for (let obj of OPTION_TEXT_VALUE_TABLE.allow) {
-            if (obj.value === opt.value) {
-                opt.textContent = obj.text;
-                break;
+    }
+    async load() {
+        this.storage = (await (browser.storage.local.get(this.actionsKeyName)))[this.actionsKeyName];
+        this.storage4Control = (await (browser.storage.local.get("directionControl")))["directionControl"];
+        let actConfig = this.storage[this.actionType][this.direction];
+
+
+        if (actConfig["tab_active"] === commons.FORE_GROUND) {
+            $E("#foreground").checked = true;
+        }
+        else {
+            $E("#background").checked = true;
+        }
+
+        if (actConfig["search_onsite"] === commons.SEARCH_ONSITE_YES) {
+            $E("#search-onsite-yes").checked = true;
+        }
+        else {
+            $E("#search-onsite-no").checked = true;
+        }
+        if (actConfig["download_saveas"] === commons.DOWNLOAD_SAVEAS_YES) {
+            $E("#download-saveas-yes").checked = true;
+        }
+        else {
+            $E("#download-saveas-no").checked = true;
+        }
+
+        // if (currentAction() === "Actions_CtrlKey") {
+        //     $E("#direction-control").value = (await (browser.storage.local.get("directionControl_CtrlKey")))["directionControl_CtrlKey"][currentActionType()]
+        // }
+        // else if (currentAction() === "Actions_ShiftKey") {
+        //     $E("#direction-control").value = (await (browser.storage.local.get("directionControl_ShiftKey")))["directionControl_ShiftKey"][currentActionType()]
+        // }
+
+
+        $E("#action-name").value = actConfig["act_name"];
+        $E("#tab-pos").value = actConfig["tab_pos"];
+        $E("#search-engine-name").value = actConfig["engine_name"];
+        $E(`#download-directory`).value = actConfig["download_directory"];
+        ["search_type", "download_type", "copy_type", "open_type"].forEach(name => {
+            let radios = document.getElementsByName(name);
+            let defaultFlag = true;
+            for (let i = 0; i < radios.length; i++) {
+                if (radios[i].value === actConfig[name]) {
+                    radios[i].checked = true;
+                    defaultFlag = false;
+                    break;
+                }
+            }
+            if (defaultFlag) radios[0].checked = true;
+        })
+
+        $E("#direction-control").value = this.storage4Control[this.actionType];
+        $E("#direction-control").dispatchEvent(new Event("change"));
+    }
+    async save() {
+        function getRadioValue(name) {
+            let radios = document.getElementsByName(name)
+            for (let i = 0; i < radios.length; i++) {
+                if (radios[i].checked) return radios[i].value;
             }
         }
-    })
-
-
-    $A("#builtin-engine select").forEach((selectElem, index) => {
-        let cloned = selectElem.cloneNode(true);
-        cloned.addEventListener("change", (e) => {
-            $E("#search-engine-name").value = e.target.querySelector(`[value='${e.target.value}']`).textContent;
-            $E("#search-engine-name").setAttribute("url", e.target.value);
-            e.target.firstElementChild.selected = true;
-        })
-        $E("#search-engine-select").appendChild(cloned);
-    });
-
-    $E("#action-category").addEventListener("change", async() => {
-        let actConfig = (await (browser.storage.local.get(currentAction())));
-        Object.assign(actConfig[currentAction()][currentActionType()][currentDirection()], {
+        let stored = {};
+        Object.assign(this.storage[this.actionType][this.direction], {
             act_name: $E("#action-name").value,
-            tab_active: getRadioValue("tab-active"),
             tab_pos: $E("#tab-pos").value,
             engine_name: $E("#search-engine-name").value,
+            download_directory: $E("#download-directory").value,
+            tab_active: getRadioValue("tab_active"),
             open_type: getRadioValue("open_type"),
-            search_type: getRadioValue("search-type"),
-            copy_type: getRadioValue("copy-type"),
-            download_type: getRadioValue("download-type"),
-            download_directory: $E("#download-directory"),
-            download_saveas: getRadioValue("download-saveas"),
-            search_onsite: getRadioValue("search-onsite")
+            search_type: getRadioValue("search_type"),
+            copy_type: getRadioValue("copy_type"),
+            download_type: getRadioValue("download_type"),
+            download_saveas: getRadioValue("download_saveas"),
+            search_onsite: getRadioValue("search_onsite")
         });
-        browser.storage.local.set(actConfig);
-    });
-    assignValue();
+        this.storage4Control[this.actionType] = $E("#direction-control").value;
+        stored[this.actionsKeyName] = this.storage;
+        stored["directionControl"] = this.storage4Control;
+        browser.storage.local.set(stored);
+    }
 }
-main();
 class EngineItemWrapper {
     constructor(val, callback, saved) {
         this.callback = callback;
@@ -549,17 +578,17 @@ const tabs = {
     init: function() {
 
 
-        let w = new Wrapper();
-        w.appendTo($E(`#tab-actions`));
+        let w = new ActionWrapper();
+        // w.appendTo($E(`#tab-actions`));
         this._tabs.push(w);
 
-        w = new ActionsWithCtrlKeyWrapper();
-        w.appendTo($E(`#tab-actions-ctrlkey`));
-        this._tabs.push(w);
+        // w = new ActionsWithCtrlKeyWrapper();
+        // w.appendTo($E(`#tab-actions-ctrlkey`));
+        // this._tabs.push(w);
 
-        w = new ActionsWithShiftKeyWrapper();
-        w.appendTo($E(`#tab-actions-shiftkey`));
-        this._tabs.push(w);
+        // w = new ActionsWithShiftKeyWrapper();
+        // w.appendTo($E(`#tab-actions-shiftkey`));
+        // this._tabs.push(w);
 
         w = new EngineWrapper(config.get("Engines"));
         w.appendTo($E(`#tab-search-template`));
@@ -585,7 +614,7 @@ const tabs = {
             elem.textContent = getI18nMessage(`elem_${elem.dataset['i18n']}`);
         }
 
-        document.querySelectorAll("input[id]").forEach(elem => {
+        $A("input[id]", $E("#tab-general")).forEach(elem => {
             if ("not-config" in elem.attributes) return;
 
             if (elem.type === "file") return;
@@ -634,7 +663,7 @@ const tabs = {
 
 // var backgroundPage = null;
 config.load().then(() => {
-    return;
+
     let fileReader = new FileReader();
     fileReader.addEventListener("loadend", async() => {
         try {
