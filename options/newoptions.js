@@ -108,6 +108,8 @@ function currentDirection() {
 class ActionWrapper {
     constructor(actionsKeyName = "Actions") {
         this.storage = null;
+        this.storage4Control = null;
+        this.engines = null;
         this.actionsKeyName = actionsKeyName;
         // $A("#type-category>div").forEach(el => {
         //     el.addEventListener("click", () => {
@@ -135,8 +137,21 @@ class ActionWrapper {
         $A("#builtin-engine select").forEach((selectElem) => {
             let cloned = selectElem.cloneNode(true);
             cloned.addEventListener("change", (e) => {
-                $E("#search-engine-name").value = e.target.querySelector(`[value='${e.target.value}']`).textContent;
-                // $E("#search-engine-name").setAttribute("url", e.target.value);
+                let name = e.target.querySelector(`[value='${e.target.value}']`).textContent;
+                let url = e.target.value
+                $E("#search-engine-name").value = name;
+                $E("#search-engine-name").setAttribute("url", url);
+                let existFlag = false;
+                for (let i = 0; i < this.engines.length; i++) {
+                    if (this.engines[i].name === name) {
+                        existFlag = true;
+                        break;
+                    }
+                }
+                if (!existFlag) {
+                    this.engines.push({ name, url })
+                }
+                browser.storage.local.set({ "Engines": this.engines });
                 e.target.firstElementChild.selected = true;
             })
             $E("#search-engine-select").appendChild(cloned);
@@ -202,6 +217,7 @@ class ActionWrapper {
     async load() {
         this.storage = (await (browser.storage.local.get(this.actionsKeyName)))[this.actionsKeyName];
         this.storage4Control = (await (browser.storage.local.get("directionControl")))["directionControl"];
+        this.engines = (await (browser.storage.local.get("Engines")))["Engines"];
         let actConfig = this.storage[this.actionType][this.direction];
 
 
@@ -266,13 +282,13 @@ class ActionWrapper {
             tab_pos: $E("#tab-pos").value,
             engine_name: $E("#search-engine-name").value,
             download_directory: $E("#download-directory").value,
-            tab_active: getRadioValue("tab_active"),
+            tab_active: getRadioValue("tab_active") === "true" ? true : false,
             open_type: getRadioValue("open_type"),
             search_type: getRadioValue("search_type"),
             copy_type: getRadioValue("copy_type"),
             download_type: getRadioValue("download_type"),
-            download_saveas: getRadioValue("download_saveas"),
-            search_onsite: getRadioValue("search_onsite")
+            download_saveas: getRadioValue("download_saveas") === "true" ? true : false,
+            search_onsite: getRadioValue("search_onsite") === "true" ? true : false,
         });
         this.storage4Control[this.actionType] = $E("#direction-control").value;
         stored[this.actionsKeyName] = this.storage;
